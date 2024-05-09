@@ -1,0 +1,9 @@
+<script>
+  // Mendapatkan nilai parameter 'video' dari URL
+  var urlParams = new URLSearchParams(window.location.search);
+  var videoUrl = urlParams.get('video');
+  
+  // Menetapkan nilai 'videoUrl' sebagai sumber video
+  var videoPlayer = document.getElementById('video-player');
+  videoPlayer.src = videoUrl;
+</script>
