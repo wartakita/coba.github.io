@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -28,19 +29,14 @@
 
         var videoUrl = getParameterByName('v');
 
-        const player = new Plyr('#player', {
-            quality: {
-                default: 720,
-                options: [1080, 720, 480, 360],
-                forced: true,
-                onChange: (e) => console.log(e)
-            }
-        });
+        const player = new Plyr('#player');
 
         if (Hls.isSupported()) {
             var hls = new Hls();
             hls.loadSource(videoUrl);
-            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+                var availableQualities = hls.levels.map((level, index) => ({label: level.height + 'p', value: index}));
+                player.updateQualityOptions(availableQualities);
                 hls.attachMedia(player.media);
             });
         } else if (player.media.canPlayType('application/x-mpegURL')) {
