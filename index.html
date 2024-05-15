@@ -1,11 +1,9 @@
 <html>
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Docs styles -->
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -16,11 +14,9 @@
         }
     </style>
 </head>
-
 <body>
     <video id="player" controls></video>
     <script>
-        // Fungsi untuk mendapatkan parameter GET
         function getParameterByName(name, url = window.location.href) {
             name = name.replace(/[\[\]]/g, '\\$&');
             var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
@@ -30,11 +26,16 @@
             return decodeURIComponent(results[2].replace(/\+/g, ' '));
         }
 
-        // Mendapatkan URL video dari parameter GET
         var videoUrl = getParameterByName('v');
 
-        // Menginisialisasi Plyr
-        const player = new Plyr('#player');
+        const player = new Plyr('#player', {
+            quality: {
+                default: 720,
+                options: [1080, 720, 480, 360],
+                forced: true,
+                onChange: (e) => console.log(e)
+            }
+        });
 
         if (Hls.isSupported()) {
             var hls = new Hls();
@@ -42,10 +43,9 @@
             hls.on(Hls.Events.MANIFEST_PARSED, function() {
                 hls.attachMedia(player.media);
             });
-        } else if (player.media.canPlayType('application/x-mpegurl')) {
+        } else if (player.media.canPlayType('application/vnd.apple.mpegurl')) {
             player.media.src = videoUrl;
         }
     </script>
 </body>
-
 </html>
