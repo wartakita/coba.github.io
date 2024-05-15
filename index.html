@@ -11,7 +11,7 @@
     <style>
         body {
             background-color: black;
-            color: white;
+            color: black;
         }
     </style>
 </head>
@@ -36,7 +36,12 @@
             hls.loadSource(videoUrl);
             hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
                 var availableQualities = hls.levels.map((level, index) => ({label: level.height + 'p', value: index}));
-                player.updateQualityOptions(availableQualities);
+                player.quality = {
+                    default: availableQualities[0].value,
+                    options: availableQualities,
+                    forced: true,
+                    onChange: (e) => hls.currentLevel = e
+                };
                 hls.attachMedia(player.media);
             });
         } else if (player.media.canPlayType('application/x-mpegURL')) {
