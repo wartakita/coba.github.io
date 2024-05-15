@@ -42,7 +42,7 @@
             hls.on(Hls.Events.MANIFEST_PARSED, function() {
                 hls.attachMedia(player.media);
             });
-        } else if (player.media.canPlayType('application/vnd.apple.mpegurl')) {
+        } else if (player.media.canPlayType('application/x-mpegurl')) {
             player.media.src = videoUrl;
         }
     </script>
