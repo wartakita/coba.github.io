@@ -7,6 +7,7 @@
     <!-- Docs styles -->
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         body {
             background-color: black;
@@ -16,10 +17,7 @@
 </head>
 
 <body>
-    <div style="width: 100%;" class="plyr__video-embed" id="player">
-        <iframe id="youtubeVideo" allowfullscreen allowtransparency allow="autoplay">
-        </iframe>
-    </div>
+    <video id="player" controls></video>
     <script>
         // Fungsi untuk mendapatkan parameter GET
         function getParameterByName(name, url = window.location.href) {
@@ -31,14 +29,19 @@
             return decodeURIComponent(results[2].replace(/\+/g, ' '));
         }
 
-        // Mendapatkan ID video dari parameter GET
-        var videoId = getParameterByName('v');
-
-        // Mengatur sumber iframe
-        document.getElementById('youtubeVideo').src = "https://www.youtube.com/embed/" + videoId;
+        // Mendapatkan URL video dari parameter GET
+        var videoUrl = getParameterByName('v');
 
         // Menginisialisasi Plyr
         const player = new Plyr('#player');
+
+        if (Hls.isSupported()) {
+            var hls = new Hls();
+            hls.loadSource(videoUrl);
+            hls.attachMedia(player.media);
+        } else if (player.media.canPlayType('application/vnd.apple.mpegurl')) {
+            player.media.src = videoUrl;
+        }
     </script>
 </body>
 
