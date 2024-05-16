@@ -28,6 +28,11 @@
 
         var videoUrl = getParameterByName('v');
 
+        if (!videoUrl) {
+            alert('Parameter video tidak ditemukan atau tidak valid.');
+            return;
+        }
+
         const player = new Plyr('#player');
 
         if (Hls.isSupported()) {
@@ -40,6 +45,8 @@
             });
         } else if (player.media.canPlayType('application/x-mpegURL')) {
             player.media.src = videoUrl;
+        } else {
+            alert('Browser Anda tidak mendukung pemutaran video ini.');
         }
     </script>
 </body>
