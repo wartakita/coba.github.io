@@ -1,8 +1,5 @@
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
@@ -28,11 +25,6 @@
 
         var videoUrl = getParameterByName('v');
 
-        if (!videoUrl) {
-            alert('Parameter video tidak ditemukan atau tidak valid.');
-            return;
-        }
-
         const player = new Plyr('#player');
 
         if (Hls.isSupported()) {
@@ -40,13 +32,16 @@
             hls.loadSource(videoUrl);
             hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
                 var availableQualities = hls.levels.map((level, index) => ({label: level.height + 'p', value: index}));
-                player.updateQualityOptions(availableQualities);
+                player.quality = {
+                    default: availableQualities[0].value,
+                    options: availableQualities,
+                    forced: true,
+                    onChange: (e) => hls.currentLevel = e
+                };
                 hls.attachMedia(player.media);
             });
         } else if (player.media.canPlayType('application/x-mpegURL')) {
             player.media.src = videoUrl;
-        } else {
-            alert('Browser Anda tidak mendukung pemutaran video ini.');
         }
     </script>
 </body>
