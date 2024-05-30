@@ -1,20 +1,14 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <style>
-        body {
-            background-color: black;
-            color: white;
-        }
-    </style>
+    <title>Get Parameter by Name</title>
 </head>
 <body>
-    <video id="player" controls></video>
     <script>
-        function getParameterByName(name, url = window.location.href) {
+        function getParameterByName(name, url) {
+            if (!url) url = window.location.href;
             name = name.replace(/[\[\]]/g, '\\$&');
             var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
                 results = regex.exec(url);
@@ -23,25 +17,39 @@
             return decodeURIComponent(results[2].replace(/\+/g, ' '));
         }
 
-        var videoUrl = getParameterByName('v');
-
-        const player = new Plyr('#player');
-
-        if (Hls.isSupported()) {
-            var hls = new Hls();
-            hls.loadSource(videoUrl);
-            hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
-                var availableQualities = hls.levels.map((level, index) => ({label: level.height + 'p', value: index}));
-                player.quality = {
-                    default: availableQualities[0].value,
-                    options: availableQualities,
-                    forced: true,
-                    onChange: (e) => hls.currentLevel = e
-                };
-                hls.attachMedia(player.media);
+        // Contoh penggunaan:
+        var videoURL = getParameterByName('video');
+        if (videoURL) {
+            var player = new Clappr.Player({
+                source: videoURL,
+                autoPlay: true,
+                height: '100%',
+                width: '100%',
+                plugins: [DashShakaPlayback, FLVJSPlayback, LevelSelector, ChromecastPlugin, ClapprPIPPlugin],
+                poster: '',
+                watermark: '',
+                position: 'top-right',
+                shakaConfiguration: {
+                    drm: {
+                        servers: {
+                            'com.widevine.alpha': 'https://cors-proxy.elfsight.com/https://mrpw.ptmnc01.verspective.net/?deviceId=OTQyZjJiZTktNTk1Yi0zYjdhLWFhNWItY2NmNWJhYTAzZTNh'
+                        }
+                    }
+                },
+                shakaOnBeforeLoad: function(shaka_player) {
+                    // shaka_player.getNetworkingEngine().registerRequestFilter() ...
+                },
+                events: {
+                    onError: function(event) {
+                        console.error("Error:", event);
+                        // Jika terjadi kesalahan, alihkan pemutar ke video cadangan
+                        player.load('https://github.com/vibetv/comingsoon/raw/main/allcomingsoon.mp4');
+                    }
+                },
+                parentId: '#player'
             });
-        } else if (player.media.canPlayType('application/x-mpegURL')) {
-            player.media.src = videoUrl;
+        } else {
+            console.error('Video URL tidak ditemukan dalam parameter URL.');
         }
     </script>
 </body>
