@@ -1,80 +1,48 @@
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         body {
-            background-color: black; /* Set background color to black */
-            margin: 0; /* Remove default margin */
-            padding: 0; /* Remove default padding */
-        }
-        #player {
-            width: 100%;
-            height: 100%;
+            background-color: black;
+            color: white;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/clappr-chromecast-plugin@latest/dist/clappr-chromecast-plugin.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clappr-pip-plugin@latest/dist/clappr-pip-plugin.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/clappr/dash-shaka-playback@latest/dist/dash-shaka-playback.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/level-selector@0.2.0/dist/level-selector.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flv.js@latest/dist/flv.min.js"></script>
-    <script src="https://cdn.statically.io/gh/andrefilimono/clappr-flvjs-playback/377bd2be/dist/clappr-flvjs-playback.min.js"></script>
 </head>
 <body>
-<div id="player"></div>
-<script>
-    // Mendapatkan parameter dari URL
-    function getParameterByName(name, url) {
-        if (!url) url = window.location.href;
-        name = name.replace(/[\[\]]/g, "\\$&");
-        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-            results = regex.exec(url);
-        if (!results) return null;
-        if (!results[2]) return '';
-        return decodeURIComponent(results[2].replace(/\+/g, " "));
-    }
+    <video id="player" controls></video>
+    <script>
+        function getParameterByName(name, url = window.location.href) {
+            name = name.replace(/[\[\]]/g, '\\$&');
+            var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
 
-    // Mendapatkan nilai parameter dari URL
-    var mainVideoParam = getParameterByName('main_video');
-    var backupVideoParam = getParameterByName('backup_video');
+        var videoUrl = getParameterByName('v');
 
-    // Setel URL video utama dan cadangan
-    var primarySource = mainVideoParam ? mainVideoParam : 'URL_video_default';
-    var backupSource = backupVideoParam ? backupVideoParam : 'URL_video_cadangan_default';
+        const player = new Plyr('#player');
 
-    var player = new Clappr.Player({
-        source: primarySource,
-        autoPlay: true,
-        height: '100%',
-        width: '100%',
-        plugins: [DashShakaPlayback, FLVJSPlayback, LevelSelector, ChromecastPlugin, ClapprPIPPlugin],
-        poster: '',
-        watermark: '',
-        position: 'top-right',
-        shakaConfiguration: {
-            drm: {
-                servers: {
-                    'com.widevine.alpha': 'https://cors-proxy.elfsight.com/https://mrpw.ptmnc01.verspective.net/?deviceId=OTQyZjJiZTktNTk1Yi0zYjdhLWFhNWItY2NmNWJhYTAzZTNh'
-                }
-            }
-        },
-        shakaOnBeforeLoad: function(shaka_player) {
-            // shaka_player.getNetworkingEngine().registerRequestFilter() ...
-        },
-        events: {
-            onError: function(event) {
-                console.error("Error:", event);
-                // Jika terjadi kesalahan, alihkan pemutar ke video cadangan
-                player.load(backupSource);
-            },
-            onPlay: function() {
-                // Jika pemutaran normal setelah kesalahan, alihkan pemutar kembali ke video utama
-                if (player.getCurrentTime() > 0) {
-                    player.load(primarySource);
-                }
-            }
-        },
-        parentId: '#player'
-    });
-</script>
+        if (Hls.isSupported()) {
+            var hls = new Hls();
+            hls.loadSource(videoUrl);
+            hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+                var availableQualities = hls.levels.map((level, index) => ({label: level.height + 'p', value: index}));
+                player.quality = {
+                    default: availableQualities[0].value,
+                    options: availableQualities,
+                    forced: true,
+                    onChange: (e) => hls.currentLevel = e
+                };
+                hls.attachMedia(player.media);
+            });
+        } else if (player.media.canPlayType('application/x-mpegURL')) {
+            player.media.src = videoUrl;
+        }
+    </script>
 </body>
 </html>
