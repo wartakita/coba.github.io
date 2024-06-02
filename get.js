@@ -8,14 +8,6 @@ function getParameterByName(name, url = window.location.href) {
     return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
 
-// Mengambil parameter 'src' dari URL
-const srcParam = getParameterByName('src');
-
-// Jika parameter 'src' ada, setel sebagai atribut src dari iframe
-if (srcParam) {
-    document.getElementById('main-iframe').src = srcParam;
-}
-
 // Fungsi untuk decode Base64
 function decodeBase64(str) {
     return decodeURIComponent(escape(atob(str)));
