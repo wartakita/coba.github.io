@@ -1,36 +1,35 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <meta content='width=device-width,initial-scale=1' name='viewport' />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Video Player</title>
     <style>
-        body {
-            background: #000;
-            font-family: sans-serif;
-            margin: 0;
-        }
-
-        video {
+        .video-container {
+            position: relative;
             width: 100%;
-            height: auto;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+        }
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
-
 <body>
-    <video controls id="video-player" poster="" src="" controls> </video>
-
-    <script>
-        // Mendapatkan nilai dari parameter URL
-        const params = new URLSearchParams(window.location.search);
-        const posterUrl = params.get('posterUrl');
-        const videoUrl = params.get('videoUrl');
-
-        // Set poster dan src video
-        const videoPlayer = document.getElementById('video-player');
-        videoPlayer.poster = posterUrl;
-        videoPlayer.src = videoUrl;
-    </script>
+    <div class="video-container">
+        <video 
+            id="video-player"
+            controls 
+            poster="https://bit.ly/4c2Tlxk"
+        >
+            <source src="https://habotv.github.io/live/c4.m3u8" type="application/x-mpegURL">
+            Your browser does not support the video tag.
+        </video>
+    </div>
 </body>
-
 </html>
