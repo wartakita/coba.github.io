@@ -24,7 +24,7 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         var urlParams = new URLSearchParams(window.location.search);
-        var videoURL = urlParams.get('video');
+        var videoURL = urlParams.has('video') ? urlParams.get('video') : 'https://github.com/vibetv/comingsoon/raw/main/allcomingsoon.mp4';
         
         var playerElement = document.getElementById("player");
         var player = new Clappr.Player({
