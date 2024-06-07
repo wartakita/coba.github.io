@@ -1,10 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Player</title>
     <style>
         body {
             background-color: black; /* Set background color to black */
@@ -25,23 +20,26 @@
     <script src="https://cdn.statically.io/gh/andrefilimono/clappr-flvjs-playback/377bd2be/dist/clappr-flvjs-playback.min.js"></script>
 </head>
 <body>
-<!-- Container untuk pemutar video -->
 <div id="player"></div>
-
-<!-- Script untuk membangun pemutar video -->
 <script>
-    // Fungsi untuk membuat pemutar video saat halaman dimuat
-    function createPlayer(videoURL, posterURL, watermarkURL) {
+    document.addEventListener("DOMContentLoaded", function() {
+        var playerElement = document.getElementById("player");
         var player = new Clappr.Player({
-            source: videoURL,
+            source: '', // Ganti dengan URL video yang sesuai
             autoPlay: true,
             height: '100%',
             width: '100%',
             plugins: [DashShakaPlayback, FLVJSPlayback, LevelSelector, ChromecastPlugin, ClapprPIPPlugin],
-            poster: posterURL,
-            watermark: watermarkURL || '',
+            poster: '',
+            watermark: '',
             position: 'top-right',
-            parentId: '#player',
+            shakaConfiguration: {
+                drm: {
+                    servers: {
+                        'com.widevine.alpha': 'https://cors-proxy.elfsight.com/https://mrpw.ptmnc01.verspective.net/?deviceId=OTQyZjJiZTktNTk1Yi0zYjdhLWFhNWItY2NmNWJhYTAzZTNh'
+                    }
+                }
+            },
             shakaOnBeforeLoad: function(shaka_player) {
                 // shaka_player.getNetworkingEngine().registerRequestFilter() ...
             },
@@ -51,18 +49,10 @@
                     // Jika terjadi kesalahan, alihkan pemutar ke video cadangan
                     player.load('https://github.com/vibetv/comingsoon/raw/main/allcomingsoon.mp4');
                 }
-            }
+            },
+            parentId: playerElement
         });
-    }
-
-    // Ambil parameter dari URL untuk video, poster, dan watermark
-    var urlParams = new URLSearchParams(window.location.search);
-    var videoURL = urlParams.get('videoURL');
-    var posterURL = urlParams.get('posterURL');
-    var watermarkURL = urlParams.get('watermarkURL');
-
-    // Buat pemutar video dengan parameter yang diambil
-    createPlayer(videoURL, posterURL, watermarkURL);
+    });
 </script>
 </body>
 </html>
