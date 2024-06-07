@@ -23,9 +23,12 @@
 <div id="player"></div>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var videoURL = urlParams.get('video');
+        
         var playerElement = document.getElementById("player");
         var player = new Clappr.Player({
-            source: '', // Ganti dengan URL video yang sesuai
+            source: videoURL, // Gunakan nilai videoURL sebagai sumber video
             autoPlay: true,
             height: '100%',
             width: '100%',
