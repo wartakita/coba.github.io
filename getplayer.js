@@ -19,7 +19,7 @@ var player = new Clappr.Player({
         seekbar: "#ffffff",
         buttons: "#ffa500",
     },
-    plugins: [DashShakaPlayback, LevelSelector, ChromecastPlugin, FLVJSPlayback, ClapprPIPPlugin],
+    plugins: [DashShakaPlayback, LevelSelector, ChromecastPlugin, ClapprPIPPlugin],
     chromecast: {
         appId: '9DFB77C0',
         contentType: 'video/mp4',
