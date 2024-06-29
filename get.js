@@ -10,7 +10,12 @@ function getParameterByName(name, url = window.location.href) {
 
 // Fungsi untuk decode Base64
 function decodeBase64(str) {
-    return decodeURIComponent(escape(atob(str)));
+    try {
+        return decodeURIComponent(atob(str));
+    } catch (e) {
+        console.error('Failed to decode base64 string:', e);
+        return null;
+    }
 }
 
 // Mengambil parameter 'src' dari URL
@@ -19,5 +24,14 @@ const srcParam = getParameterByName('src');
 // Jika parameter 'src' ada, decode dan setel sebagai atribut src dari iframe
 if (srcParam) {
     const decodedSrc = decodeBase64(srcParam);
-    document.getElementById('main-iframe').src = decodedSrc;
+    if (decodedSrc) {
+        const iframe = document.getElementById('main-iframe');
+        if (iframe) {
+            iframe.src = decodedSrc;
+        } else {
+            console.error('Element with id "main-iframe" not found.');
+        }
+    } else {
+        console.error('Invalid src parameter.');
+    }
 }
