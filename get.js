@@ -1,9 +1,4 @@
-<!-- Pustaka CryptoJS dari CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
-    
-    <!-- Script untuk dekripsi dan pengaturan atribut src -->
-    <script>
-        // Fungsi untuk mendapatkan parameter dari URL
+// Fungsi untuk mendapatkan parameter dari URL
         function getParameterByName(name, url = window.location.href) {
             name = name.replace(/[\[\]]/g, '\\$&');
             let regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
@@ -39,7 +34,7 @@
         const srcParam = getParameterByName('src');
 
         // Passphrase yang digunakan untuk enkripsi dan dekripsi AES
-        const passphrase = 'your-passphrase-here';
+        const passphrase = 'rajawalistreamid';
 
         // Jika parameter 'src' ada, decode dan setel sebagai atribut src dari iframe
         if (srcParam) {
@@ -55,4 +50,3 @@
                 console.error('Invalid decoded URL or decryption failed.');
             }
         }
-    </script>
