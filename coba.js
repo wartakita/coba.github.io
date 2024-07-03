@@ -1,94 +1,90 @@
-function searchTable() {
-        var input, filter, table, tr, td, i, j, txtValue, noResults;
-        input = document.getElementById("searchInput");
-        filter = input.value.toUpperCase();
-        table = document.getElementById("matchTable").getElementsByTagName("tbody")[0];
-        tr = table.getElementsByTagName("tr");
-        noResults = document.getElementById("noResults");
-        let matchFound = false;
+document.addEventListener('DOMContentLoaded', () => {
+            const savedDate = localStorage.getItem('filterDate');
+            const savedTeam = localStorage.getItem('filterTeam');
+            const savedSortColumn = localStorage.getItem('sortColumn');
+            const savedSortDirection = localStorage.getItem('sortDirection');
 
-        for (i = 0; i < tr.length; i++) {
-            tr[i].style.display = "none"; // Hide all rows initially
-
-            td = tr[i].getElementsByTagName("td");
-            for (j = 0; j < td.length; j++) {
-                if (td[j]) {
-                    txtValue = td[j].textContent || td[j].innerText;
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        tr[i].style.display = ""; // Show the row if match is found
-                        matchFound = true;
-                        break;
-                    }
-                }
+            if (savedDate) {
+                document.getElementById('filter-date').value = savedDate;
             }
+            if (savedTeam) {
+                document.getElementById('filter-team').value = savedTeam;
+            }
+            filterMatches();
+
+            if (savedSortColumn !== null && savedSortDirection !== null) {
+                sortTable(parseInt(savedSortColumn), savedSortDirection === 'desc');
+            }
+        });
+
+        function parseDate(dateStr) {
+            const parts = dateStr.split('-');
+            return new Date(parts[2], parts[1] - 1, parts[0]);
         }
 
-        if (matchFound) {
-            noResults.style.display = "none";
-        } else {
-            noResults.style.display = "block";
-        }
-    }
+        function filterMatches() {
+            const filterDate = document.getElementById('filter-date').value;
+            const filterTeam = document.getElementById('filter-team').value.toLowerCase();
+            const tableBody = document.getElementById('match-table-body');
+            const rows = tableBody.getElementsByTagName('tr');
+            let matchFound = false;
 
-    function sortTable(n) {
-        var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-        table = document.getElementById("matchTable");
-        switching = true;
-        dir = "asc"; 
+            localStorage.setItem('filterDate', filterDate);
+            localStorage.setItem('filterTeam', filterTeam);
 
-        while (switching) {
-            switching = false;
-            rows = table.rows;
+            for (let i = 0; i < rows.length; i++) {
+                const dateCell = rows[i].getElementsByTagName('td')[0];
+                const matchCell = rows[i].getElementsByTagName('td')[1];
+                const leagueCell = rows[i].getElementsByTagName('td')[2];
 
-            for (i = 1; i < (rows.length - 1); i++) {
-                shouldSwitch = false;
-                x = rows[i].getElementsByTagName("TD")[n];
-                y = rows[i + 1].getElementsByTagName("TD")[n];
+                const matchDate = dateCell.textContent || dateCell.innerText;
+                const match = matchCell.textContent.toLowerCase() || matchCell.innerText.toLowerCase();
+                const league = leagueCell.textContent.toLowerCase() || leagueCell.innerText.toLowerCase();
 
-                if (dir == "asc") {
-                    if (n === 0) { // Sort by date
-                        if (compareDates(x.innerHTML, y.innerHTML) > 0) {
-                            shouldSwitch = true;
-                            break;
-                        }
-                    } else {
-                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                            shouldSwitch = true;
-                            break;
-                        }
-                    }
-                } else if (dir == "desc") {
-                    if (n === 0) { // Sort by date
-                        if (compareDates(x.innerHTML, y.innerHTML) < 0) {
-                            shouldSwitch = true;
-                            break;
-                        }
-                    } else {
-                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-                            shouldSwitch = true;
-                            break;
-                        }
-                    }
+                const matchDateObj = parseDate(matchDate);
+                const filterDateObj = filterDate ? new Date(filterDate) : null;
+
+                if ((filterDate === "" || matchDateObj.toISOString().slice(0, 10) === filterDate) &&
+                    (filterTeam === "" || match.includes(filterTeam) || league.includes(filterTeam))) {
+                    rows[i].style.display = "";
+                    matchFound = true;
+                } else {
+                    rows[i].style.display = "none";
                 }
             }
-            if (shouldSwitch) {
-                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                switching = true;
-                switchcount ++; 
+
+            const noMatches = document.getElementById('no-matches');
+            if (matchFound) {
+                noMatches.style.display = "none";
             } else {
-                if (switchcount == 0 && dir == "asc") {
-                    dir = "desc";
-                    switching = true;
-                }
+                noMatches.style.display = "block";
             }
         }
-    }
 
-    function compareDates(date1, date2) {
-        // Convert date format from DD-MM-YYYY to YYYY-MM-DD
-        let [day1, month1, year1] = date1.split('-');
-        let [day2, month2, year2] = date2.split('-');
-        let d1 = new Date(`${year1}-${month1}-${day1}`);
-        let d2 = new Date(`${year2}-${month2}-${day2}`);
-        return d1 - d2;
-    }
+        function sortTable(columnIndex, isDescending = false) {
+            const table = document.querySelector("tbody");
+            const rows = Array.from(table.rows);
+            const isDateColumn = columnIndex === 0;
+            const isTimeColumn = columnIndex === 3;
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.cells[columnIndex].innerText;
+                const cellB = rowB.cells[columnIndex].innerText;
+
+                let comparison = 0;
+                if (isDateColumn) {
+                    comparison = parseDate(cellA) - parseDate(cellB);
+                } else if (isTimeColumn) {
+                    comparison = cellA.localeCompare(cellB);
+                } else {
+                    comparison = cellA.localeCompare(cellB);
+                }
+
+                return isDescending ? -comparison : comparison;
+            });
+
+            rows.forEach(row => table.appendChild(row));
+
+            localStorage.setItem('sortColumn', columnIndex);
+            localStorage.setItem('sortDirection', isDescending ? 'desc' : 'asc');
+        }
