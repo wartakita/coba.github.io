@@ -23,15 +23,15 @@ function displayErrorMessage(message) {
 
 function logError(errorDetails) {
     fetch('https://www.example.com/log-error', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(errorDetails),
-    })
-    .then(response => response.json())
-    .then(data => console.log('Log kesalahan berhasil:', data))
-    .catch((error) => console.error('Gagal mengirim log kesalahan:', error));
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(errorDetails),
+        })
+        .then(response => response.json())
+        .then(data => console.log('Log kesalahan berhasil:', data))
+        .catch((error) => console.error('Gagal mengirim log kesalahan:', error));
 }
 
 var sourceURL = getQueryParam('video') || ''; // URL video default
@@ -42,7 +42,10 @@ if (!isValidURL(sourceURL)) {
     var errorMsg = "URL video tidak valid atau tidak ada. Silakan periksa URL dan coba lagi.";
     console.error(errorMsg);
     displayErrorMessage(errorMsg);
-    logError({ error: errorMsg, sourceURL: sourceURL });
+    logError({
+        error: errorMsg,
+        sourceURL: sourceURL
+    });
 } else {
     var player = new Clappr.Player({
         source: sourceURL,
@@ -79,7 +82,11 @@ if (!isValidURL(sourceURL)) {
                     }
                 }
                 displayErrorMessage(errorMessage);
-                logError({ error: errorMessage, code: e.code, details: e });
+                logError({
+                    error: errorMessage,
+                    code: e.code,
+                    details: e
+                });
             },
             onPlay: function() {
                 console.log("Memutar");
