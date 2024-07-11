@@ -26,20 +26,20 @@ function getQueryParam(param) {
             },
             parentId: '#player',
             events: {
-                onError: function(e) {
-                    console.error("Error occurred: ", e);
+                onError: function (e) {
+                    console.error("Terjadi kesalahan: ", e);
                 },
-                onPlay: function() {
-                    console.log("Playing");
+                onPlay: function () {
+                    console.log("Memutar");
                 },
-                onPause: function() {
-                    console.log("Paused");
+                onPause: function () {
+                    console.log("Jeda");
                 },
-                onEnded: function() {
-                    console.log("Video ended");
+                onEnded: function () {
+                    console.log("Video berakhir");
                 },
-                onTimeUpdate: function(currentTime) {
-                    console.log("Current time: ", currentTime);
+                onTimeUpdate: function (currentTime) {
+                    console.log("Waktu saat ini: ", currentTime);
                 }
             }
         });
