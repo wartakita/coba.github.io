@@ -16,7 +16,6 @@ function decodeBase64(str) {
 
 var encryptedSourceURL = getQueryParam('video') || ''; // Ambil URL terenkripsi dari query parameter
 var posterURL = getQueryParam('poster') || 'DEFAULT_POSTER_URL_HERE'; // Ganti dengan URL default poster jika ada
-var watermarkURL = getQueryParam('watermark') || 'DEFAULT_WATERMARK_URL_HERE'; // Ganti dengan URL default watermark jika ada
 
 var sourceURL = encryptedSourceURL ? decodeBase64(encryptedSourceURL) : 'DEFAULT_VIDEO_URL_HERE'; // Dekripsi URL
 
@@ -25,8 +24,6 @@ var player = new Clappr.Player({
     height: '100%',
     width: '100%',
     poster: posterURL,
-    watermark: watermarkURL,
-    position: 'bottom-right',
     autoPlay: true,
     mediacontrol: {
         seekbar: "#ffffff",
