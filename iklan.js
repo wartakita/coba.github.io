@@ -53,15 +53,3 @@ var player = new Clappr.Player({
         }
     }
 });
- // Function to update time in WIB
-            function updateTime() {
-                const now = new Date();
-                const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-                const timeString = now.toLocaleTimeString('en-GB', options);
-                document.getElementById('timeDisplay').textContent = `${timeString} WIB`;
-            }
-
-            // Update time every second
-            setInterval(updateTime, 1000);
-            updateTime();  // Initial call to set time immediately
-        });
