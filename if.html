@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iframe Full Website dengan AES Enkripsi URL</title>
+    <style>
+        iframe {
+            width: 100%;
+            height: 100vh;
+            border: none;
+        }
+        .error {
+            color: red;
+            font-size: 18px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script> <!-- Include CryptoJS library -->
+</head>
+<body>
+    <div id="container"></div>
+
+    <script>
+        // Fungsi untuk mendapatkan parameter dari URL
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Fungsi untuk mendekripsi AES
+        function decryptURL(encryptedURL, secretKey) {
+            const parts = encryptedURL.split(':');
+            const iv = CryptoJS.enc.Hex.parse(parts[0]);
+            const encrypted = CryptoJS.enc.Hex.parse(parts[1]);
+            const key = CryptoJS.enc.Hex.parse(secretKey);
+
+            const decrypted = CryptoJS.AES.decrypt(
+                { ciphertext: encrypted },
+                key,
+                { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+            );
+
+            return decrypted.toString(CryptoJS.enc.Utf8);
+        }
+
+        // Ambil URL terenkripsi dan kunci dari parameter
+        const encryptedURL = getQueryParam('url');
+        const secretKey = getQueryParam('key');
+
+        const container = document.getElementById('container');
+
+        if (encryptedURL && secretKey) {
+            try {
+                // Dekripsi URL menggunakan AES
+                const decryptedURL = decryptURL(encryptedURL, secretKey);
+
+                // Validasi URL hasil dekripsi
+                if (decryptedURL && isValidURL(decryptedURL)) {
+                    // Buat elemen iframe dengan URL hasil dekripsi
+                    const iframe = document.createElement('iframe');
+                    iframe.src = decryptedURL;
+                    container.appendChild(iframe);
+                } else {
+                    container.innerHTML = '<p class="error">URL tidak valid setelah dekripsi.</p>';
+                }
+            } catch (error) {
+                container.innerHTML = '<p class="error">Terjadi kesalahan saat dekripsi URL.</p>';
+            }
+        } else {
+            container.innerHTML = '<p class="error">Parameter URL atau kunci tidak ditemukan.</p>';
+        }
+
+        // Fungsi untuk memvalidasi URL
+        function isValidURL(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>
