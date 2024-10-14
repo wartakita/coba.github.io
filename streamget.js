@@ -13,20 +13,29 @@ function filterMatches() {
                 const teamMatch = match.includes(filterTeam) || league.includes(filterTeam);
 
                 if (dateMatch && teamMatch) {
-                    row.style.display = '';
+                    row.style.display = '';  // Show matching row
                     matchFound = true;
                 } else {
-                    row.style.display = 'none';
+                    row.style.display = 'none';  // Hide non-matching row
                 }
             });
 
-            document.getElementById('no-matches').style.display = matchFound ? 'none' : '';
+            const noMatchesDiv = document.getElementById('no-matches');
+            // Display 'No Matches' message if no matches found
+            if (matchFound) {
+                noMatchesDiv.style.display = 'none';
+            } else {
+                noMatchesDiv.style.display = 'block';
+            }
         }
 
         function sortTable(columnIndex) {
             const tableBody = document.getElementById('match-table-body');
             const rows = Array.from(tableBody.rows);
 
-            rows.sort((a, b) => a.cells[columnIndex].textContent.localeCompare(b.cells[columnIndex].textContent));
+            rows.sort((a, b) => 
+                a.cells[columnIndex].textContent.localeCompare(b.cells[columnIndex].textContent)
+            );
+
             rows.forEach(row => tableBody.appendChild(row));
         }
