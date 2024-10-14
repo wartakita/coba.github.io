@@ -30,8 +30,3 @@ function filterMatches() {
             rows.sort((a, b) => a.cells[columnIndex].textContent.localeCompare(b.cells[columnIndex].textContent));
             rows.forEach(row => tableBody.appendChild(row));
         }
-
-        function openMatchLink(cell) {
-            const link = cell.querySelector('a');
-            if (link) link.click();
-        }
