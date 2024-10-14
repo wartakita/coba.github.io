@@ -2,7 +2,7 @@ function filterMatches() {
             const filterDate = document.getElementById('filter-date').value;
             const filterTeam = document.getElementById('filter-team').value.toLowerCase();
             const rows = document.querySelectorAll('#match-table-body tr');
-            let matchFound = false;
+            let matchFound = true;
 
             rows.forEach(row => {
                 const date = row.cells[0].textContent;
