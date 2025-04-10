@@ -1,56 +1,104 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Get Parameter by Name</title>
+    <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.14.7/dist/shaka-player.compiled.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.14.7/dist/shaka-player.ui.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/shaka-player@4.14.7/dist/controls.min.css">
+    <style>
+        /* CSS untuk membuat video responsif */
+        #video {
+            width: 100%; /* Lebar video 100% dari lebar kontainer */
+            height: auto; /* Tinggi video akan disesuaikan dengan lebar, menjaga aspek rasio */
+        }
+
+        /* Contoh media query untuk mengatur lebar video pada layar kecil */
+        @media screen and (max-width: 600px) {
+            #video {
+                width: 90%; /* Lebar video menjadi 90% dari lebar kontainer pada layar kecil */
+            }
+        }
+    </style>
 </head>
+
 <body>
+    <div data-shaka-player-container style="max-width:100em" data-shaka-player-cast-receiver-id="8D8C71A7">
+        <video autoplay data-shaka-player id="video"></video>
+    </div>
     <script>
+        // Fungsi untuk mendapatkan nilai parameter dari URL
         function getParameterByName(name, url) {
             if (!url) url = window.location.href;
-            name = name.replace(/[\[\]]/g, '\\$&');
-            var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+            name = name.replace(/[\[\]]/g, "\\$&");
+            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
                 results = regex.exec(url);
             if (!results) return null;
             if (!results[2]) return '';
-            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+            return decodeURIComponent(results[2].replace(/\+/g, " "));
         }
 
-        // Contoh penggunaan:
-        var videoURL = getParameterByName('video');
-        if (videoURL) {
-            var player = new Clappr.Player({
-                source: videoURL,
-                autoPlay: true,
-                height: '100%',
-                width: '100%',
-                plugins: [DashShakaPlayback, FLVJSPlayback, LevelSelector, ChromecastPlugin, ClapprPIPPlugin],
-                poster: '',
-                watermark: '',
-                position: 'top-right',
-                shakaConfiguration: {
+        // Mendapatkan manifest URI dari URL atau menggunakan nilai default
+        const manifestUri = getParameterByName('manifest') || 'DEFAULT_MANIFEST_URL';
+
+        // Mendapatkan DRM clear keys dari URL
+        const keyId = getParameterByName('keyId');
+        const key = getParameterByName('key');
+        const clearKeys = keyId && key ? { [keyId]: key } : null;
+
+        async function init() {
+            const video = document.getElementById('video');
+            const ui = video['ui'];
+            const controls = ui.getControls();
+            const player = controls.getPlayer();
+            const config = {
+                'controlPanelElements': ['play_pause', 'rewind', 'fast_forward', 'spacer',
+                    'mute', 'volume', 'quality', 'fullscreen','cast'
+                ]
+            }
+            if (clearKeys) {
+                player.configure({
                     drm: {
-                        servers: {
-                            'com.widevine.alpha': 'https://cors-proxy.elfsight.com/https://mrpw.ptmnc01.verspective.net/?deviceId=OTQyZjJiZTktNTk1Yi0zYjdhLWFhNWItY2NmNWJhYTAzZTNh'
-                        }
+                        clearKeys: clearKeys
                     }
-                },
-                shakaOnBeforeLoad: function(shaka_player) {
-                    // shaka_player.getNetworkingEngine().registerRequestFilter() ...
-                },
-                events: {
-                    onError: function(event) {
-                        console.error("Error:", event);
-                        // Jika terjadi kesalahan, alihkan pemutar ke video cadangan
-                        player.load('https://github.com/vibetv/comingsoon/raw/main/allcomingsoon.mp4');
-                    }
-                },
-                parentId: '#player'
-            });
-        } else {
-            console.error('Video URL tidak ditemukan dalam parameter URL.');
+                });
+            }
+            ui.configure(config);
+
+            window.player = player;
+            window.ui = ui;
+
+            player.addEventListener('error', onPlayerErrorEvent);
+            controls.addEventListener('error', onUIErrorEvent);
+
+            try {
+                await player.load(manifestUri);
+                console.log('The video has now been loaded!');
+            } catch (error) {
+                onPlayerError(error);
+            }
         }
+
+        function onPlayerErrorEvent(errorEvent) {
+            onPlayerError(event.detail);
+        }
+
+        function onPlayerError(error) {
+            console.error('Error code', error.code, 'object', error);
+        }
+
+        function onUIErrorEvent(errorEvent) {
+            onPlayerError(event.detail);
+        }
+
+        function initFailed(errorEvent) {
+            console.error('Unable to load the UI library!');
+        }
+        document.addEventListener('shaka-ui-loaded', init);
+        document.addEventListener('shaka-ui-load-failed', initFailed);
+
     </script>
 </body>
+
 </html>
