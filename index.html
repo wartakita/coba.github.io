@@ -1,104 +1,73 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.14.7/dist/shaka-player.compiled.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/shaka-player@4.14.7/dist/shaka-player.ui.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/shaka-player@4.14.7/dist/controls.min.css">
-    <style>
-        /* CSS untuk membuat video responsif */
-        #video {
-            width: 100%; /* Lebar video 100% dari lebar kontainer */
-            height: auto; /* Tinggi video akan disesuaikan dengan lebar, menjaga aspek rasio */
-        }
-
-        /* Contoh media query untuk mengatur lebar video pada layar kecil */
-        @media screen and (max-width: 600px) {
-            #video {
-                width: 90%; /* Lebar video menjadi 90% dari lebar kontainer pada layar kecil */
-            }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="https://unpkg.com/dplayer@1.27.1/dist/DPlayer.min.css" />
 </head>
-
 <body>
-    <div data-shaka-player-container style="max-width:100em" data-shaka-player-cast-receiver-id="8D8C71A7">
-        <video autoplay data-shaka-player id="video"></video>
-    </div>
-    <script>
-        // Fungsi untuk mendapatkan nilai parameter dari URL
-        function getParameterByName(name, url) {
-            if (!url) url = window.location.href;
-            name = name.replace(/[\[\]]/g, "\\$&");
-            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-                results = regex.exec(url);
-            if (!results) return null;
-            if (!results[2]) return '';
-            return decodeURIComponent(results[2].replace(/\+/g, " "));
-        }
 
-        // Mendapatkan manifest URI dari URL atau menggunakan nilai default
-        const manifestUri = getParameterByName('manifest') || 'DEFAULT_MANIFEST_URL';
+<div id="dplayer"></div>
 
-        // Mendapatkan DRM clear keys dari URL
-        const keyId = getParameterByName('keyId');
-        const key = getParameterByName('key');
-        const clearKeys = keyId && key ? { [keyId]: key } : null;
+<script src="https://unpkg.com/dplayer@1.27.1/dist/DPlayer.min.js"></script>
+<script src="https://unpkg.com/flv.js@1.6.2/dist/flv.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.5/dist/hls.min.js"></script>
 
-        async function init() {
-            const video = document.getElementById('video');
-            const ui = video['ui'];
-            const controls = ui.getControls();
-            const player = controls.getPlayer();
-            const config = {
-                'controlPanelElements': ['play_pause', 'rewind', 'fast_forward', 'spacer',
-                    'mute', 'volume', 'quality', 'fullscreen','cast'
-                ]
-            }
-            if (clearKeys) {
-                player.configure({
-                    drm: {
-                        clearKeys: clearKeys
-                    }
-                });
-            }
-            ui.configure(config);
+<script>
+// Fungsi untuk mendapatkan parameter URL berdasarkan nama
+function getParameterByName(name, url = window.location.href) {
+  name = name.replace(/[\[\]]/g, '\\$&');
+  const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+  const results = regex.exec(url);
+  if (!results) return null;
+  if (!results[2]) return '';
+  return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
 
-            window.player = player;
-            window.ui = ui;
+// Ambil parameter video dan format dari URL
+const videoUrl = getParameterByName('video') || 'path/to/default-video'; // default URL jika tidak ada parameter
+const videoType = getParameterByName('format') || 'flv'; // default format flv
 
-            player.addEventListener('error', onPlayerErrorEvent);
-            controls.addEventListener('error', onUIErrorEvent);
+// Inisialisasi player berdasarkan tipe video
+if (videoType === 'flv') {
+  if (flvjs.isSupported()) {
+    const dp = new DPlayer({
+      container: document.getElementById('dplayer'),
+      autoplay: true,
+      video: {
+        url: videoUrl.endsWith('.flv') ? videoUrl : videoUrl + '.flv',
+        type: 'flv',
+      },
+    });
+  } else {
+    alert('FLV format not supported in this browser.');
+  }
+} else if (videoType === 'hls') {
+  if (Hls.isSupported()) {
+    const dp = new DPlayer({
+      container: document.getElementById('dplayer'),
+      autoplay: true,
+      video: {
+        url: videoUrl.endsWith('.m3u8') ? videoUrl : videoUrl + '.m3u8',
+        type: 'hls',
+      },
+    });
+  } else if (document.createElement('video').canPlayType('application/vnd.apple.mpegurl')) {
+    const dp = new DPlayer({
+      container: document.getElementById('dplayer'),
+      autoplay: true,
+      video: {
+        url: videoUrl.endsWith('.m3u8') ? videoUrl : videoUrl + '.m3u8',
+        type: 'hls',
+      },
+    });
+  } else {
+    alert('HLS format not supported in this browser.');
+  }
+} else {
+  alert('Unsupported video type.');
+}
+</script>
 
-            try {
-                await player.load(manifestUri);
-                console.log('The video has now been loaded!');
-            } catch (error) {
-                onPlayerError(error);
-            }
-        }
-
-        function onPlayerErrorEvent(errorEvent) {
-            onPlayerError(event.detail);
-        }
-
-        function onPlayerError(error) {
-            console.error('Error code', error.code, 'object', error);
-        }
-
-        function onUIErrorEvent(errorEvent) {
-            onPlayerError(event.detail);
-        }
-
-        function initFailed(errorEvent) {
-            console.error('Unable to load the UI library!');
-        }
-        document.addEventListener('shaka-ui-loaded', init);
-        document.addEventListener('shaka-ui-load-failed', initFailed);
-
-    </script>
 </body>
-
 </html>
