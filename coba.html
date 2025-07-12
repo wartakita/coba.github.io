@@ -1,61 +1,192 @@
-<html>
+<!DOCTYPE html>
+<html lang="en" class="dark">
 <head>
-    <style>
-        body {
-            background-color: black; /* Set background color to black */
-            margin: 0; /* Remove default margin */
-            padding: 0; /* Remove default padding */
-        }
-        #player {
-            width: 100%;
-            height: 100%;
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/clappr-chromecast-plugin@latest/dist/clappr-chromecast-plugin.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clappr-pip-plugin@latest/dist/clappr-pip-plugin.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/clappr/dash-shaka-playback@latest/dist/dash-shaka-playback.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/level-selector@0.2.0/dist/level-selector.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flv.js@latest/dist/flv.min.js"></script>
-    <script src="https://cdn.statically.io/gh/andrefilimono/clappr-flvjs-playback/377bd2be/dist/clappr-flvjs-playback.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StreamPulse - Live Sports in Dark Mode</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body {
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: 'Inter', sans-serif;
+  }
+  /* Scrollbar customization for dark */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #202020;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: #6b7280; /* Tailwind gray-500 */
+    border-radius: 4px;
+  }
+  /* Modal background fade */
+  .modal-bg {
+    background-color: rgba(18, 18, 18, 0.9);
+  }
+  /* Button focus and hover */
+  button:focus, select:focus, input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px #6366f1; /* Tailwind indigo-500 */
+  }
+</style>
 </head>
-<body>
-<div id="player"></div>
+<body class="dark min-h-screen flex flex-col">
+
+<header class="flex flex-col sm:flex-row items-center justify-between p-5 bg-gray-900 shadow-md gap-4">
+  <h1 class="text-4xl font-extrabold tracking-tight select-none whitespace-nowrap">StreamPulse</h1>
+  <nav class="flex flex-col sm:flex-row items-center sm:space-x-4 w-full sm:w-auto gap-3">
+    <select id="categoryFilter" aria-label="Filter by Category" class="bg-gray-800 text-gray-300 rounded-md p-2 min-w-[140px]">
+      <option value="all">All Sports</option>
+    </select>
+    <input type="search" id="teamSearch" placeholder="Search match or team..." aria-label="Search stream" class="bg-gray-800 text-gray-300 rounded-md p-2 placeholder-gray-400 flex-grow min-w-[180px]" />
+  </nav>
+</header>
+
+<main class="flex-grow p-6 max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+  <!-- Stream cards will be inserted here -->
+</main>
+
+<!-- Modal for video embed -->
+<div id="streamModal" class="fixed inset-0 hidden modal-bg flex items-center justify-center z-50 p-4">
+  <div class="bg-gray-800 rounded-lg shadow-lg max-w-full max-h-full w-full sm:w-4/5 md:w-3/4 lg:w-2/3 aspect-video relative overflow-hidden">
+    <button id="modalCloseBtn" aria-label="Close Modal" class="text-gray-300 absolute top-3 right-4 text-3xl font-bold hover:text-indigo-500 transition-colors cursor-pointer">&times;</button>
+    <iframe id="videoFrame" src="" frameborder="0" allowfullscreen class="w-full h-full"></iframe>
+  </div>
+</div>
+
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var urlParams = new URLSearchParams(window.location.search);
-        var videoURL = urlParams.has('video') ? urlParams.get('video') : 'https://github.com/vibetv/comingsoon/raw/main/allcomingsoon.mp4';
-        
-        var playerElement = document.getElementById("player");
-        var player = new Clappr.Player({
-            source: videoURL, // Gunakan nilai videoURL sebagai sumber video
-            autoPlay: true,
-            height: '100%',
-            width: '100%',
-            plugins: [DashShakaPlayback, FLVJSPlayback, LevelSelector, ChromecastPlugin, ClapprPIPPlugin],
-            poster: '',
-            watermark: '',
-            position: 'top-right',
-            shakaConfiguration: {
-                drm: {
-                    servers: {
-                        'com.widevine.alpha': 'https://cors-proxy.elfsight.com/https://mrpw.ptmnc01.verspective.net/?deviceId=OTQyZjJiZTktNTk1Yi0zYjdhLWFhNWItY2NmNWJhYTAzZTNh'
-                    }
-                }
-            },
-            shakaOnBeforeLoad: function(shaka_player) {
-                // shaka_player.getNetworkingEngine().registerRequestFilter() ...
-            },
-            events: {
-                onError: function(event) {
-                    console.error("Error:", event);
-                    // Jika terjadi kesalahan, alihkan pemutar ke video cadangan
-                    player.load('https://github.com/vibetv/comingsoon/raw/main/allcomingsoon.mp4');
-                }
-            },
-            parentId: playerElement
-        });
+  const apiEndpoint = 'https://peepstreams.com/api/streams';
+  let streamsData = [];
+
+  const mainGrid = document.querySelector('main');
+  const categoryFilter = document.getElementById('categoryFilter');
+  const teamSearch = document.getElementById('teamSearch');
+  const modal = document.getElementById('streamModal');
+  const modalCloseBtn = document.getElementById('modalCloseBtn');
+  const videoFrame = document.getElementById('videoFrame');
+
+  // Fetch data and initialize UI
+  async function initialize() {
+    try {
+      const res = await fetch(apiEndpoint);
+      if (!res.ok) throw new Error('Failed to fetch streams');
+      streamsData = await res.json();
+      populateCategoryFilter();
+      renderStreams();
+    } catch(err) {
+      mainGrid.innerHTML = `<p class="text-red-500 col-span-full text-center mt-10">${err.message}</p>`;
+    }
+  }
+
+  // Populate category filter dropdown
+  function populateCategoryFilter() {
+    const categories = streamsData.map(s => s.title);
+    const uniqueCategories = [...new Set(categories)];
+    uniqueCategories.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.toLowerCase();
+      opt.textContent = cat;
+      categoryFilter.appendChild(opt);
     });
+  }
+
+  // Render streams cards according to filters
+  function renderStreams() {
+    const selectedCategory = categoryFilter.value;
+    const searchTerm = teamSearch.value.trim().toLowerCase();
+
+    mainGrid.innerHTML = '';
+
+    let filtered = streamsData;
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(s => s.title.toLowerCase() === selectedCategory);
+    }
+
+    filtered.forEach(group => {
+      group.streams.forEach(stream => {
+        // Search filter on stream title or team names (if available)
+        if (stream.title.toLowerCase().includes(searchTerm)) {
+          const card = document.createElement('article');
+          card.className = 'bg-gray-800 rounded-lg shadow-md p-4 flex flex-col hover:shadow-indigo-500/50 transition-shadow cursor-pointer focus:ring-2 focus:ring-indigo-500 outline-none';
+          card.setAttribute('tabindex', '0');
+
+          card.innerHTML = `
+            <img src="${stream.image}" alt="${stream.title} logo" class="w-14 h-14 object-contain mb-3 mx-auto sm:mx-0" />
+            <h2 class="text-lg font-semibold mb-1 text-center sm:text-left">${stream.title}</h2>
+            <time datetime="${convertToISO(stream.time)}" class="text-xs text-gray-400 mb-2 text-center sm:text-left">${stream.time}</time>
+            <div class="flex flex-wrap gap-2 mt-auto justify-center sm:justify-start">
+              ${stream.sources.map(source => {
+                return `<button class="btnSource text-indigo-400 text-sm border border-indigo-400 rounded px-2 py-1 hover:bg-indigo-600 hover:text-indigo-100 transition" data-embed="${source.embedUrl}" aria-label="Watch source ${source.streamNo} in ${source.language}">Source ${source.streamNo} (${source.language})${source.hd ? ' HD' : ''}</button>`;
+              }).join('')}
+            </div>
+          `;
+
+          // Add event listener to show modal with embedUrl
+          card.querySelectorAll('.btnSource').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const url = btn.getAttribute('data-embed');
+              showModal(url);
+            });
+          });
+
+          mainGrid.appendChild(card);
+        }
+      });
+    });
+
+    if(mainGrid.innerHTML === '') {
+      mainGrid.innerHTML = `<p class="text-center col-span-full text-gray-500 mt-10">No streams found.</p>`;
+    }
+  }
+
+  // Convert the time string to ISO 8601 datetime for time element
+  function convertToISO(timeStr) {
+    let matched = timeStr.match(/\((\d{2}\/\d{2}\/\d{4})\)/);
+    if (matched) {
+      const [day, month, year] = matched[1].split('/');
+      return `${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`;
+    }
+    return '';
+  }
+
+  // Show modal with the embed video URL
+  function showModal(embedUrl) {
+    videoFrame.src = embedUrl;
+    modal.classList.remove('hidden');
+    // Prevent background scrolling while modal open
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Close modal and clear iframe
+  function closeModal() {
+    modal.classList.add('hidden');
+    videoFrame.src = '';
+    document.body.style.overflow = ''; // Restore scroll
+  }
+
+  // Search & filter event listeners
+  categoryFilter.addEventListener('change', renderStreams);
+  teamSearch.addEventListener('input', renderStreams);
+  modalCloseBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  // Keyboard accessibility: close modal on Escape key
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+      closeModal();
+    }
+  });
+
+  // Initialize app
+  initialize();
+
 </script>
+
 </body>
 </html>
