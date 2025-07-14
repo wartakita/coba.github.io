@@ -1,468 +1,325 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth bg-gray-900 text-gray-200">
+<html lang="en" class="dark scroll-smooth">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DarkArena Sports</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Custom scrollbar for dark */
-    ::-webkit-scrollbar {
-      width: 10px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #1f2937;
-    }
-    ::-webkit-scrollbar-thumb {
-      background-color: #4b5563;
-      border-radius: 5px;
-    }
-    /* Popup animation */
-    .popup-bg {
-      background-color: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(5px);
-    }
-    .fade-in {
-      animation: fadeIn 0.3s ease forwards;
-    }
-    .fade-out {
-      animation: fadeOut 0.3s ease forwards;
-    }
-    @keyframes fadeIn {
-      from {opacity: 0;}
-      to {opacity: 1;}
-    }
-    @keyframes fadeOut {
-      from {opacity: 1;}
-      to {opacity: 0;}
-    }
-    /* Pastikan modal tetap full height dengan scroll automatic jika konten melebihi viewport */
-  #videoPopup > div {
-    max-height: 90vh;
-    overflow-y: auto;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DarkArena - Sports Streaming Modern</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  /* Scrollbar Dark */
+  ::-webkit-scrollbar {
+    width: 8px;
   }
-
-  /* Media query opsional untuk penyesuaian lebih spesifik jika mau */
-  @media (max-width: 640px) {
-    #videoPopup > div {
-      max-width: 95vw;
-    }
+  ::-webkit-scrollbar-track {
+    background: #1a1a1a;
   }
-  </style>
+  ::-webkit-scrollbar-thumb {
+    background-color: #4f46e5;
+    border-radius: 10px;
+  }
+  /* Animasi spinner */
+  .loader {
+    border: 4px solid transparent;
+    border-top: 4px solid #4f46e5;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg);}
+    100% {transform: rotate(360deg);}
+  }
+</style>
 </head>
-<body class="flex flex-col min-h-screen">
+<body class="bg-gray-900 text-gray-300 min-h-screen flex flex-col">
 
-  <!-- Header / Navbar -->
-  <header class="sticky top-0 z-50 bg-gray-800 shadow-md">
-    <div class="container mx-auto px-4 py-4 flex flex-wrap items-center justify-between">
-      <h1 class="text-2xl font-bold text-indigo-400 cursor-default select-none">DarkArena Sports</h1>
+<header class="px-4 py-4 bg-gray-800 shadow-md flex flex-col md:flex-row md:items-center md:justify-between sticky top-0 z-50">
+  <h1 class="text-3xl font-extrabold text-indigo-500 select-none mb-3 md:mb-0">DarkArena</h1>
+  <div class="flex flex-wrap gap-3 items-center">
+    <input type="date" id="filterDate" class="px-3 py-1 rounded bg-gray-700 text-gray-200 focus:outline-indigo-400" />
+    <select id="filterCategory" class="px-3 py-1 rounded bg-gray-700 text-gray-200 focus:outline-indigo-400">
+      <option value="">All Sports</option>
+    </select>
+    <input type="search" id="filterTeam" placeholder="Search Team" class="px-3 py-1 rounded bg-gray-700 text-gray-200 placeholder-gray-400 focus:outline-indigo-400" />
+  </div>
+</header>
 
-      <div class="flex flex-wrap items-center gap-3 md:gap-6">
-        <!-- Category Dropdown -->
-        <select id="categorySelect" aria-label="Select Category" class="bg-gray-700 rounded-md px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <option value="all" selected>All Categories</option>
-        </select>
+<main class="flex-grow p-4 space-y-4" id="matchesContainer">
+  <div id="notification" class="fixed top-5 right-5 bg-indigo-600 text-white px-4 py-2 rounded shadow-lg opacity-0 pointer-events-none transition-opacity duration-400"></div>
+  <!-- List pertandingan akan dimuat di sini -->
+</main>
 
-        <!-- Search Input -->
-        <input
-          id="teamSearch"
-          type="search"
-          placeholder="Search Team..."
-          class="bg-gray-700 rounded-md px-3 py-2 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          autocomplete="off"
-          aria-label="Search Team"
-        />
+<!-- Scroll to top button -->
+<button id="btnScrollTop" class="hidden fixed bottom-8 right-6 p-3 rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-lg text-white z-50" title="Scroll to top">
+  ▲
+</button>
 
-        <!-- Scroll to Top Button -->
-        <button
-          id="scrollTopBtn"
-          title="Scroll to top"
-          class="hidden fixed bottom-8 right-8 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-full shadow-lg transition-opacity duration-300"
-          aria-label="Scroll to top"
-        >
-          ↑
-        </button>
-      </div>
+<!-- Modal Popup Embed Video -->
+<div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-90 backdrop-blur-sm flex flex-col p-4 z-50 overflow-auto">
+  <div class="mb-3 flex justify-between items-center">
+    <h2 class="text-lg font-semibold text-indigo-400" id="modalTitle">Loading...</h2>
+    <button id="closeModalBtn" class="text-gray-300 hover:text-indigo-500 text-xl font-bold">×</button>
+  </div>
+  <div id="streamOptions" class="mb-4 flex flex-wrap gap-2 overflow-x-auto"></div>
+  <div class="relative flex-grow">
+    <div id="loadingEmbed" class="absolute inset-0 flex justify-center items-center bg-black bg-opacity-70 z-20">
+      <div class="loader"></div>
     </div>
-  </header>
-
-  <!-- Main Content -->
-  <main class="container mx-auto px-4 flex-grow py-6">
-    <div id="notification" class="fixed top-20 right-6 bg-indigo-600 text-white px-4 py-2 rounded shadow-md opacity-0 pointer-events-none transition-opacity duration-300 z-50" role="alert"></div>
-
-    <!-- Matches List -->
-    <section>
-      <h2 class="text-xl font-semibold mb-4">Matches</h2>
-      <div id="matchesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Match cards will be appended here -->
-      </div>
-    </section>
-  </main>
-
-<!-- Popup Modal Embed Video -->
-<div id="videoPopup" class="fixed inset-0 flex items-center justify-center z-50 hidden popup-bg p-4 bg-black bg-opacity-70" role="dialog" aria-modal="true" aria-labelledby="popupTitle" aria-describedby="popupDesc">
-  <div class="relative w-full max-w-4xl bg-gray-900 rounded-lg shadow-lg overflow-hidden">
-    <!-- Tombol Close -->
-    <button id="closePopupBtn" aria-label="Close Video" 
-      class="absolute top-3 right-3 text-gray-300 hover:text-white text-3xl font-bold z-50 bg-gray-800 bg-opacity-70 rounded-full w-10 h-10 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-      style="line-height: 1;">&times;</button>
-
-    <!-- Loading Spinner -->
-    <div id="videoLoading" class="flex justify-center items-center" style="height: 0; padding-top: 56.25%; background-color: #2d3748; position: relative;">
-      <svg class="animate-spin h-10 w-10 text-indigo-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" role="img" aria-label="Loading">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-      </svg>
-    </div>
-
-    <!-- Video Embed -->
-    <div class="videoWrapper relative w-full" style="padding-top: 56.25%;">
-      <iframe id="videoEmbed" class="absolute top-0 left-0 w-full h-full hidden" frameborder="0" allowfullscreen sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>
-    </div>
-
-    <!-- Realtime Countdown Display -->
-    <div id="countdownTimer" class="text-center text-indigo-400 text-lg font-mono mt-4 select-none"></div>
-
-    <div id="streamSources" class="flex flex-wrap gap-2 bg-gray-800 p-3 overflow-x-auto"></div>
+    <iframe id="videoIframe" class="w-full h-[400px] md:h-[600px] rounded-md border border-indigo-700" frameborder="0" allowfullscreen allow="autoplay;fullscreen"></iframe>
   </div>
 </div>
 
-  <!-- Footer -->
-  <footer class="bg-gray-800 text-gray-400 text-center py-6 mt-auto select-none">
-    <p class="max-w-4xl mx-auto px-4">
-      &copy; 2025 DarkArena Sports. Your ultimate dark-themed hub for live sports streams & match updates powered by Westream API.
-    </p>
-  </footer>
+<footer class="bg-gray-800 py-6 text-center text-gray-400 text-sm select-none">
+  <p>© 2025 DarkArena - Streaming olahraga modern dengan berbagai sumber dan bahasa. Nikmati pertandingan favorit Anda dengan pengalaman terbaik.</p>
+</footer>
 
-  <script>
-    const API_BASE = 'https://westream.nu';
+<script>
+// BASE URL API
+const API_BASE = 'https://westream.nu';
 
-    // Elements
-    const categorySelect = document.getElementById('categorySelect');
-    const teamSearchInput = document.getElementById('teamSearch');
-    const matchesContainer = document.getElementById('matchesContainer');
-    const videoPopup = document.getElementById('videoPopup');
-    const videoEmbed = document.getElementById('videoEmbed');
-    const videoLoading = document.getElementById('videoLoading');
-    const closePopupBtn = document.getElementById('closePopupBtn');
-    const streamSources = document.getElementById('streamSources');
-    const notification = document.getElementById('notification');
-    const scrollTopBtn = document.getElementById('scrollTopBtn');
-    
-    const countdownTimer = document.getElementById('countdownTimer');
+// Elemen
+const filterDate = document.getElementById('filterDate');
+const filterCategory = document.getElementById('filterCategory');
+const filterTeam = document.getElementById('filterTeam');
+const matchesContainer = document.getElementById('matchesContainer');
+const notification = document.getElementById('notification');
+const modal = document.getElementById('modal');
+const videoIframe = document.getElementById('videoIframe');
+const streamOptions = document.getElementById('streamOptions');
+const modalTitle = document.getElementById('modalTitle');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const btnScrollTop = document.getElementById('btnScrollTop');
+const loadingEmbed = document.getElementById('loadingEmbed');
 
-  let countdownInterval;
+let matchesData = [];
+let sportsData = [];
+let refreshInterval;
 
-  closePopupBtn.addEventListener('click', () => {
-    videoPopup.classList.add('hidden');
-    videoEmbed.src = ''; // Reset src agar video berhenti
-    videoEmbed.classList.add('hidden');
-    videoLoading.style.display = 'flex';
-    clearInterval(countdownInterval);
-    countdownTimer.textContent = '';
+// Inisialisasi tanggal filter dengan hari ini
+function setTodayDate() {
+  const today = new Date();
+  filterDate.value = today.toISOString().split('T')[0];
+}
+setTodayDate();
+
+// Fetch categories sports untuk dropdown
+async function loadSports() {
+  try {
+    const res = await fetch(`${API_BASE}/sports`);
+    sportsData = await res.json();
+    // Tambah opsi ke dropdown
+    sportsData.forEach(sport => {
+      const opt = document.createElement('option');
+      opt.value = sport.id;
+      opt.textContent = sport.name;
+      filterCategory.appendChild(opt);
+    });
+  } catch (e) {
+    showNotification('Gagal memuat kategori olahraga');
+  }
+}
+
+// Fetch matches
+async function loadMatches() {
+  try {
+    let url = `${API_BASE}/matches`;
+
+    // Jika ada filter kategori
+    if (filterCategory.value) {
+      url = `${API_BASE}/matches/${filterCategory.value}`;
+    }
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    // Filter berdasarkan tanggal dan tim
+    const filterDateVal = new Date(filterDate.value).setHours(0,0,0,0);
+    const filterTeamVal = filterTeam.value.trim().toLowerCase();
+
+    matchesData = data.filter(m => {
+      const matchDate = new Date(m.date).setHours(0,0,0,0);
+      const matchTeams = (m.teams?.home?.name || '') + ' ' + (m.teams?.away?.name || '');
+      return (
+        matchDate === filterDateVal &&
+        (!filterTeamVal || matchTeams.toLowerCase().includes(filterTeamVal))
+      );
+    });
+
+    renderMatches();
+  } catch (e) {
+    showNotification('Gagal memuat data pertandingan');
+  }
+}
+
+// Render list pertandingan
+function renderMatches() {
+  matchesContainer.innerHTML = '';
+  if (matchesData.length === 0) {
+    matchesContainer.innerHTML = `<p class="text-center text-gray-400 mt-6">Tidak ada pertandingan pada tanggal dan filter ini.</p>`;
+    return;
+  }
+  matchesData.forEach(match => {
+    const card = document.createElement('div');
+    card.className = 'bg-gray-800 p-4 rounded-md shadow-md flex flex-col md:flex-row md:justify-between md:items-center gap-3 hover:scale-[1.02] transition-transform cursor-pointer';
+
+    const teamsText = `${match.teams?.home?.name || 'TBD'} vs ${match.teams?.away?.name || 'TBD'}`;
+    const dateText = new Date(match.date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+
+    card.innerHTML = `
+      <div>
+        <h3 class="text-xl font-semibold text-indigo-400">${match.title}</h3>
+        <p class="text-gray-400">${teamsText}</p>
+        <p class="text-xs text-gray-500">${dateText}</p>
+      </div>
+      <button class="watchBtn px-4 py-2 bg-indigo-600 rounded-md text-white hover:bg-indigo-700 transition" data-id="${match.id}" data-title="${match.title}" data-category="${match.category}" data-teams="${teamsText}">Watch</button>
+    `;
+
+    matchesContainer.appendChild(card);
   });
 
-  // Fungsi load video dan mulai hitungan mundur 60 detik realtime
-  function loadVideo(url) {
-    videoEmbed.src = url;
-    videoPopup.classList.remove('hidden');
-    videoLoading.style.display = 'flex';
-    videoEmbed.classList.add('hidden');
+  // Pasang event listener tombol Watch
+  document.querySelectorAll('.watchBtn').forEach(btn => {
+    btn.addEventListener('click', onWatchClick);
+  });
+}
 
-    let timeLeft = 60; // 60 detik
-    countdownTimer.textContent = `Countdown: ${timeLeft}s`;
+// Show notification dengan animasi
+function showNotification(msg) {
+  notification.textContent = msg;
+  notification.style.opacity = 1;
+  notification.style.pointerEvents = 'auto';
+  setTimeout(() => {
+    notification.style.opacity = 0;
+    notification.style.pointerEvents = 'none';
+  }, 3500);
+}
 
-    clearInterval(countdownInterval);
-    countdownInterval = setInterval(() => {
-      timeLeft--;
-      countdownTimer.textContent = `Countdown: ${timeLeft}s`;
+// Event handler Watch
+async function onWatchClick(e) {
+  e.stopPropagation();
+  const btn = e.currentTarget;
+  const id = btn.getAttribute('data-id');
+  const title = btn.getAttribute('data-title');
+  const category = btn.getAttribute('data-category');
 
-      if(timeLeft <= 0){
-        clearInterval(countdownInterval);
-        countdownTimer.textContent = 'Countdown selesai!';
-        // Contoh aksi ketika timer selesai:
-        alert('Waktu 60 detik sudah habis!');
-        // Anda bisa tambahkan aksi lain di sini 
-      }
-    }, 1000);
+  // Tampilkan tab iklan dulu
+  window.open('https://www.profitableratecpm.com/asy7nn44y1?key=fb244c9fcb6018b78e6640d5ee73066f', '_blank');
 
-    videoEmbed.onload = () => {
-      videoLoading.style.display = 'none';
-      videoEmbed.classList.remove('hidden');
-    };
+  modalTitle.textContent = title + ' - ' + category;
+  await loadStreamsForMatch(id);
+  modal.classList.remove('hidden');
+
+  // Scroll ke atas modal
+  modal.scrollTop = 0;
+}
+
+// Load stream data multiple source & language dan render tombol stream options
+async function loadStreamsForMatch(matchId) {
+  try {
+    streamOptions.innerHTML = '<p class="text-gray-400">Loading streams...</p>';
+    videoIframe.src = 'about:blank';
+    loadingEmbed.style.display = 'flex';
+
+    // Cari match dari matchesData
+    const match = matchesData.find(m => m.id === matchId);
+    if (!match) {
+      streamOptions.innerHTML = '<p class="text-red-500">Stream tidak ditemukan</p>';
+      loadingEmbed.style.display = 'none';
+      return;
+    }
+
+    // Gabungkan streams dari semua source yang ada
+    let allStreams = [];
+    for (const sourceObj of match.sources) {
+      const source = sourceObj.source;
+      const id = sourceObj.id;
+      const res = await fetch(`${API_BASE}/stream/${source}/${id}`);
+      const streams = await res.json();
+      allStreams = allStreams.concat(streams);
+    }
+
+    if (allStreams.length === 0) {
+      streamOptions.innerHTML = '<p class="text-red-500">Tidak ada stream tersedia</p>';
+      loadingEmbed.style.display = 'none';
+      return;
+    }
+
+    // Buat tombol untuk semua stream options
+    streamOptions.innerHTML = '';
+    allStreams.forEach((stream, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'px-3 py-1 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm transition';
+      btn.textContent = `${stream.source.toUpperCase()} | ${stream.language.toUpperCase()}${stream.hd ? ' HD' : ''} - Stream #${stream.streamNo}`;
+      btn.dataset.source = stream.source;
+      btn.dataset.streamid = stream.id;
+      btn.dataset.streamno = stream.streamNo;
+      btn.onclick = () => {
+        openEmbedUrl(stream.source, stream.id, stream.streamNo);
+      };
+      streamOptions.appendChild(btn);
+    });
+
+    // Auto load first stream
+    const first = allStreams[0];
+    openEmbedUrl(first.source, first.id, first.streamNo);
+
+  } catch (err) {
+    streamOptions.innerHTML = '<p class="text-red-500">Gagal memuat stream</p>';
+    loadingEmbed.style.display = 'none';
   }
+}
 
-    let allSports = [];
-    let allMatches = [];
-    let filteredMatches = [];
-    let currentFilterCategory = 'all';
-    let currentSearchTerm = '';
-    let currentSelectedMatch = null;
-    let currentSelectedStream = null;
+// Fungsi buka embedUrl di iframe dengan loading indicator
+function openEmbedUrl(source, id, streamNo) {
+  loadingEmbed.style.display = 'flex';
+  videoIframe.src = `${API_BASE}/embed/${source}/${id}/${streamNo}`;
+  // Load selesai akan sembunyikan loading
+  videoIframe.onload = () => {
+    loadingEmbed.style.display = 'none';
+  };
+}
 
-    // Utility: Format timestamp to local date-time string
-    function formatDate(unixMs) {
-      const dt = new Date(unixMs);
-      return dt.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-    }
+// Modal close
+function closeModal() {
+  modal.classList.add('hidden');
+  videoIframe.src = 'about:blank';
+  // Buka tab iklan saat close
+  window.open('https://www.profitableratecpm.com/asy7nn44y1?key=fb244c9fcb6018b78e6640d5ee73066f', '_blank');
+}
 
-    // Show notification
-    function showNotification(message) {
-      notification.textContent = message;
-      notification.style.opacity = '1';
-      notification.style.pointerEvents = 'auto';
-      setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.pointerEvents = 'none';
-      }, 3000);
-    }
+// Scroll to top button
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 300) {
+    btnScrollTop.classList.remove('hidden');
+  } else {
+    btnScrollTop.classList.add('hidden');
+  }
+});
+btnScrollTop.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
-    // Fetch sports categories and fill dropdown
-    async function fetchSports() {
-      try {
-        const resp = await fetch(`${API_BASE}/sports`);
-        if (!resp.ok) throw new Error('Failed to fetch sports');
-        const sports = await resp.json();
-        allSports = sports;
-        renderCategories();
-      } catch (err) {
-        showNotification('Error loading sports categories.');
-        console.error(err);
-      }
-    }
+closeModalBtn.addEventListener('click', closeModal);
 
-    function renderCategories() {
-      // Reset options, keep "All Categories"
-      categorySelect.innerHTML = '<option value="all" selected>All Categories</option>';
-      allSports.forEach(sport => {
-        const opt = document.createElement('option');
-        opt.value = sport.id;
-        opt.textContent = sport.name;
-        categorySelect.appendChild(opt);
-      });
-    }
+// Event filter change
+[filterDate, filterCategory, filterTeam].forEach(el => {
+  el.addEventListener('input', () => {
+    loadMatches();
+  });
+});
 
-    // Fetch matches (all or by sport)
-    async function fetchMatches(sportId = 'all') {
-      try {
-        let url = sportId === 'all' ? `${API_BASE}/matches` : `${API_BASE}/matches/${encodeURIComponent(sportId)}`;
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error('Failed to fetch matches');
-        const matches = await resp.json();
-        allMatches = matches;
-        applyFilters();
-      } catch (err) {
-        showNotification('Error loading matches.');
-        console.error(err);
-      }
-    }
+// Initial load
+(async () => {
+  await loadSports();
+  await loadMatches();
 
-    // Filter by category and team search
-    function applyFilters() {
-      filteredMatches = allMatches.filter(match => {
-        const matchCategory = match.category.toLowerCase();
-        if (currentFilterCategory !== 'all' && matchCategory !== currentFilterCategory.toLowerCase()) {
-          return false;
-        }
-        if (currentSearchTerm) {
-          const search = currentSearchTerm.toLowerCase();
-          let home = match.teams?.home?.name?.toLowerCase() || '';
-          let away = match.teams?.away?.name?.toLowerCase() || '';
-          if (!home.includes(search) && !away.includes(search) && !match.title.toLowerCase().includes(search)) {
-            return false;
-          }
-        }
-        return true;
-      });
-      renderMatches();
-    }
-
-    // Render the list of matches
-    function renderMatches() {
-      matchesContainer.innerHTML = '';
-      if (filteredMatches.length === 0) {
-        matchesContainer.innerHTML = `<p class="text-center text-gray-400 col-span-full">No matches found.</p>`;
-        return;
-      }
-      filteredMatches.forEach(match => {
-        const card = document.createElement('article');
-        card.className = 'bg-gray-800 p-4 rounded shadow hover:shadow-indigo-600 transition-shadow flex flex-col justify-between';
-
-        // Title and date
-        const title = document.createElement('h3');
-        title.className = 'font-semibold text-lg mb-1';
-        title.textContent = match.title;
-        card.appendChild(title);
-
-        const date = document.createElement('time');
-        date.className = 'text-sm text-gray-400 mb-2';
-        date.dateTime = new Date(match.date).toISOString();
-        date.textContent = formatDate(match.date);
-        card.appendChild(date);
-
-        // Teams
-        if (match.teams) {
-          const teamsDiv = document.createElement('div');
-          teamsDiv.className = 'mb-3 flex justify-between text-indigo-300 font-medium';
-
-          const homeTeam = document.createElement('span');
-          homeTeam.textContent = match.teams.home?.name || 'TBD';
-          teamsDiv.appendChild(homeTeam);
-
-          const vs = document.createElement('span');
-          vs.textContent = 'vs';
-          vs.className = 'mx-2 text-gray-400 italic';
-          teamsDiv.appendChild(vs);
-
-          const awayTeam = document.createElement('span');
-          awayTeam.textContent = match.teams.away?.name || 'TBD';
-          teamsDiv.appendChild(awayTeam);
-
-          card.appendChild(teamsDiv);
-        }
-
-        // Popular tag
-        if (match.popular) {
-          const popularBadge = document.createElement('span');
-          popularBadge.textContent = 'Popular';
-          popularBadge.className = 'inline-block bg-indigo-600 text-indigo-100 px-2 py-0.5 rounded text-xs font-semibold mb-2 w-fit';
-          card.appendChild(popularBadge);
-        }
-
-        // Button watch
-        const btnWatch = document.createElement('button');
-        btnWatch.textContent = 'Watch';
-        btnWatch.className = 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded shadow-md transition';
-        btnWatch.setAttribute('aria-label', `Watch match: ${match.title}`);
-        btnWatch.addEventListener('click', () => openWatchPopup(match));
-        card.appendChild(btnWatch);
-
-        matchesContainer.appendChild(card);
-      });
-    }
-
-    // Open popup with video embed, handle ads tabs and streams
-    async function openWatchPopup(match) {
-      // Open ads tab
-      window.open('https://www.profitableratecpm.com/asy7nn44y1?key=fb244c9fcb6018b78e6640d5ee73066f', '_blank', 'noopener');
-
-      currentSelectedMatch = match;
-      videoPopup.classList.remove('hidden');
-      videoPopup.classList.remove('fade-out');
-      videoPopup.classList.add('fade-in');
-
-      videoEmbed.style.display = 'none';
-      videoLoading.style.display = 'flex';
-      streamSources.innerHTML = '';
-
-      try {
-        // Fetch streams for first source
-        // We will show all sources and languages as buttons below video to allow user switch if available
-        if (!match.sources?.length) {
-          throw new Error('No sources available for this match.');
-        }
-        // Fetch streams from first source's id here by /stream/:source/:id
-        let streamsAll = [];
-        for (const sourceObj of match.sources) {
-          let sUrl = `${API_BASE}/stream/${encodeURIComponent(sourceObj.source)}/${encodeURIComponent(sourceObj.id)}`;
-          const resp = await fetch(sUrl);
-          if (!resp.ok) continue;
-          const streams = await resp.json();
-          streamsAll = streamsAll.concat(streams);
-        }
-        if (streamsAll.length === 0) throw new Error('No streams found.');
-
-        // Store streams list and select first as default
-        currentSelectedStream = streamsAll[0];
-
-        // Render stream source buttons
-        streamsAll.forEach(stream => {
-          const btn = document.createElement('button');
-          btn.className = `px-3 py-1 rounded border border-indigo-500 text-indigo-400 hover:bg-indigo-600 hover:text-white transition`;
-          btn.textContent = `${stream.language.toUpperCase()}${stream.hd ? ' HD' : ''} [#${stream.streamNo}]`;
-          btn.addEventListener('click', () => selectStream(stream));
-          streamSources.appendChild(btn);
-        });
-
-        setEmbedUrl(currentSelectedStream.embedUrl);
-
-      } catch (err) {
-        videoLoading.style.display = 'flex';
-        videoEmbed.style.display = 'none';
-        streamSources.innerHTML = `<p class="text-red-500 p-4">Failed to load streams: ${err.message}</p>`;
-        console.error(err);
-      }
-    }
-
-    function setEmbedUrl(url) {
-      videoEmbed.style.display = 'none';
-      videoLoading.style.display = 'flex';
-
-      // Load embed url in iframe with a slight delay to show loading spinner
-      setTimeout(() => {
-        videoEmbed.src = url;
-        videoEmbed.onload = () => {
-          videoLoading.style.display = 'none';
-          videoEmbed.style.display = 'block';
-        }
-      }, 300);
-    }
-
-    // Switch stream source
-    function selectStream(stream) {
-      currentSelectedStream = stream;
-      setEmbedUrl(stream.embedUrl);
-    }
-
-    // Close popup
-    function closePopup() {
-      videoPopup.classList.remove('fade-in');
-      videoPopup.classList.add('fade-out');
-      videoEmbed.src = '';
-      currentSelectedMatch = null;
-      currentSelectedStream = null;
-
-      // Open another ads tab on close
-      window.open('https://www.profitableratecpm.com/asy7nn44y1?key=fb244c9fcb6018b78e6640d5ee73066f', '_blank', 'noopener');
-
-      setTimeout(() => {
-        videoPopup.classList.add('hidden');
-      }, 300);
-    }
-
-    // Event listeners
-    categorySelect.addEventListener('change', e => {
-      currentFilterCategory = e.target.value;
-      fetchMatches(currentFilterCategory !== 'all' ? currentFilterCategory : 'all');
-    });
-
-    teamSearchInput.addEventListener('input', e => {
-      currentSearchTerm = e.target.value.trim();
-      applyFilters();
-    });
-
-    closePopupBtn.addEventListener('click', closePopup);
-
-    // Scroll to top button functionality
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 400) {
-        scrollTopBtn.classList.remove('hidden');
-      } else {
-        scrollTopBtn.classList.add('hidden');
-      }
-    });
-
-    scrollTopBtn.addEventListener('click', () => {
-      window.scrollTo({top: 0, behavior: 'smooth'});
-    });
-
-    // Initialize on load
-    async function init() {
-      await fetchSports();
-      await fetchMatches();
-    }
-
-    window.addEventListener('DOMContentLoaded', init);
-  </script>
+  // Update otomatis setiap 60 detik
+  refreshInterval = setInterval(() => {
+    loadMatches();
+    showNotification('Data pertandingan diperbarui');
+  }, 60000);
+})();
+</script>
 </body>
 </html>
